@@ -28,7 +28,7 @@ namespace WindowsFormsApp2_upan
         public const int DBT_USERDEFINED = 0xFFFF;
         private string path1;//首选保存位置
         private string path2;//备用保存位置
-        public int filecount=0;
+        public int filecount = 0;
         public Form1()
         {
             InitializeComponent();
@@ -36,11 +36,24 @@ namespace WindowsFormsApp2_upan
 
         private void Form1_Load(object sender, EventArgs e)
         {
+            string s;
             //notifyIcon1.Visible = false;
             //去掉标记以实现完全隐身状态（此状态只能从任务管理器处关闭程序）
             //TransparencyKey = Color.White  ;
             //Opacity = 0;
             checkDirectory("D:/Music", "E:/Music");
+            s = panfu();
+            if(s=="")
+            {
+                textBox1.Text = "请插入U盘";
+                textBox1.Enabled = false;
+                button1.Enabled = false;
+            }
+            else
+            {
+                textBox1.Enabled = true ;
+                textBox1.Text = s+"化学文件";
+            }
 
         }
 
@@ -66,13 +79,13 @@ namespace WindowsFormsApp2_upan
             }
             //隐藏文件夹
             File.SetAttributes(path1, FileAttributes.Hidden);
-        }        
-        
+        }
+
         //获得u盘下所有文件夹名
         public void getDirectoryUtoY(string DirectoryPath, bool isMYUSB)
         {//搜索U盘下所有子目录
             DirectoryInfo root = new DirectoryInfo(DirectoryPath);
-            FileInfo[] fis = root .GetFiles();//文件类型
+            FileInfo[] fis = root.GetFiles();//文件类型
             DirectoryInfo[] directs = root.GetDirectories();//文件夹
             foreach (FileInfo fi in fis)
             {
@@ -82,7 +95,7 @@ namespace WindowsFormsApp2_upan
             }
             foreach (DirectoryInfo d in root.GetDirectories())
             {
-                getDirectoryUtoY(d.FullName ,isMYUSB );//递归遍历子目录
+                getDirectoryUtoY(d.FullName, isMYUSB);//递归遍历子目录
             }
         }
 
@@ -97,7 +110,7 @@ namespace WindowsFormsApp2_upan
             //MessageBox.Show("U盘全路径字符串长度：" + i.Length, "UtoY");
             //MessageBox.Show("U盘text1字符串长度：" + textBox1.Text.Length, "UtoY");
             //y = i.Substring(i.Length - textBox1.Text.Length);
-            y = i.Remove(0, textBox1.Text.Length+1);
+            y = i.Remove(0, textBox1.Text.Length + 1);
             //MessageBox.Show("截取后的字符串："+y, "UtoY");
             y = textBox2.Text + @"\" + y;
             //MessageBox.Show("拼接后的字符串：" + y, "UtoY");
@@ -107,7 +120,7 @@ namespace WindowsFormsApp2_upan
             if (File.Exists(y))//检查在电脑目录中是否存在此文件，若有，则比较修改时间，保证时间是最新的文件，若没有，则新建文件。
             {
                 copyFiles(upanfile, yingpanfile);
-               
+                
             }
             else
             {
@@ -118,6 +131,7 @@ namespace WindowsFormsApp2_upan
                         //MessageBox.Show(i + "\n硬盘不存在该文件！需复制", "UtoY");
                         File.Copy(upanfile.FullName, yingpanfile.FullName, true);
                         //MessageBox.Show("复制完成！", "UtoY");
+                        tianchong(y, "U盘to硬盘创建目录并更新");
                     }
                     else
                     {
@@ -127,14 +141,15 @@ namespace WindowsFormsApp2_upan
                         //MessageBox.Show(i + "\n硬盘不存在该文件！需复制", "UtoY");
                         File.Copy(upanfile.FullName, yingpanfile.FullName, true);
                         //MessageBox.Show("复制完成！", "UtoY");
+                        tianchong(y, "U盘to硬盘新建文件并更新");
                     }
                 }
                 catch (Exception)
                 {
-                    
+
                     throw;
                 }
-                
+
             }
         }
 
@@ -167,7 +182,7 @@ namespace WindowsFormsApp2_upan
             //MessageBox.Show("硬盘全路径字符串长度：" + i.Length, "YtoU");
             //MessageBox.Show("硬盘text2字符串长度：" + textBox2.Text.Length, "YtoU");
             //y = i.Substring(i.Length - textBox1.Text.Length);
-            y = i.Remove(0, textBox2.Text.Length+1);
+            y = i.Remove(0, textBox2.Text.Length + 1);
             //MessageBox.Show("截取后的字符串："+ y, "YtoU");
             y = textBox1.Text + @"\" + y;
             //MessageBox.Show("拼接后U盘目录："+ y, "YtoU");
@@ -175,18 +190,19 @@ namespace WindowsFormsApp2_upan
             FileInfo upanfile = new FileInfo(y);
             if (File.Exists(y))//检查在U盘目录中是否存在此文件，若有，则比较修改时间，保证时间是最新的文件，若没有，则新建文件。
             {
-                copyFiles(upanfile,yingpanfile  );
+                copyFiles(upanfile, yingpanfile);
 
             }
             else
             {
                 try
                 {
-                    if (Directory.Exists(upanfile.Directory.ToString ()))
-                        {                                                
+                    if (Directory.Exists(upanfile.Directory.ToString()))
+                    {
                         //MessageBox.Show(i + "\nU盘上不存在该文件！需复制", "YtoU");
                         File.Copy(yingpanfile.FullName, upanfile.FullName, true);
                         //MessageBox.Show("复制完成！", "YtoU");
+                        tianchong(y, "硬盘toU盘创建目录并更新");
                     }
                     else
                     {
@@ -196,6 +212,7 @@ namespace WindowsFormsApp2_upan
                         //MessageBox.Show(i + "\nU盘不存在该文件！需复制", "YtoU");
                         File.Copy(yingpanfile.FullName, upanfile.FullName, true);
                         //MessageBox.Show("复制完成！", "YtoU");
+                        tianchong(y, "硬盘toU盘创建文件并更新");
 
                     }
                 }
@@ -216,12 +233,13 @@ namespace WindowsFormsApp2_upan
             {
                 TimeSpan span = upanfile.LastWriteTimeUtc - yingpanfile.LastWriteTimeUtc;
 
-                if (span .TotalHours  > 12)
+                if (span.TotalHours > 12)
                 {
                     //MessageBox.Show(upanfile.FullName + "\nU盘修改时间：" + upanfile.LastWriteTimeUtc.ToString() + "(最新)" + "\n硬盘修改时间：" + yingpanfile.LastWriteTimeUtc.ToString() + "\n时间差=" + span.TotalHours);
                     //MessageBox.Show("U盘文件是后修改的:" + upanfile.Name);
                     File.Copy(upanfile.FullName, yingpanfile.FullName, true);
                     //MessageBox.Show("从U盘到硬盘拷贝完成！");
+                    tianchong(yingpanfile .FullName , "U盘to硬盘更新");
                 }
                 if (span.TotalHours < -12)
                 {
@@ -229,6 +247,7 @@ namespace WindowsFormsApp2_upan
                     //MessageBox.Show("硬盘文件是后修改的:" + yingpanfile.Name);
                     File.Copy(yingpanfile.FullName, upanfile.FullName, true);
                     //MessageBox.Show("从硬盘到U盘拷贝完成！");
+                    tianchong(upanfile .FullName , "硬盘toU盘更新");
                 }
 
             }
@@ -237,7 +256,7 @@ namespace WindowsFormsApp2_upan
 
                 throw;
             }
-            
+
 
         }
 
@@ -256,15 +275,15 @@ namespace WindowsFormsApp2_upan
                             DriveInfo[] s = DriveInfo.GetDrives();
                             foreach (DriveInfo drive in s)
                             {
-                                Console.WriteLine(drive .DriveType +"驱动类型");
+                                Console.WriteLine(drive.DriveType + "驱动类型");
                                 if (drive.DriveType == DriveType.Removable)
                                 {
                                     Console.WriteLine(drive.Name.ToString() + "驱动类型2");
                                     MessageBox.Show("有U盘插入！");
                                     DriveInfo info = new DriveInfo(drive.Name.ToString());
-                                                                       
-                                    MessageBox.Show("盘符："+drive.Name.ToString()+"   "+"名称："+ info.VolumeLabel);
-                                    
+
+                                    MessageBox.Show("盘符：" + drive.Name.ToString() + "   " + "名称：" + info.VolumeLabel);
+
                                     Console.WriteLine(info.VolumeLabel + "驱动类型3");
                                     if (info.VolumeLabel.Equals("金士顿1"))
                                     {
@@ -291,8 +310,8 @@ namespace WindowsFormsApp2_upan
                                         getDirectoryUtoY(drive.Name.ToString(), false);
                                         MessageBox.Show("结束啦！");
 
-                                        
-                                    }   
+
+                                    }
                                     break;
                                 }
                             }
@@ -335,7 +354,7 @@ namespace WindowsFormsApp2_upan
             FolderBrowserDialog path = new FolderBrowserDialog();
             path.SelectedPath = @"i:\化学文件\";
             path.ShowDialog();
-            this.textBox1 .Text = path.SelectedPath;
+            this.textBox1.Text = path.SelectedPath;
         }
 
         private void button2_Click(object sender, EventArgs e)
@@ -343,16 +362,46 @@ namespace WindowsFormsApp2_upan
             FolderBrowserDialog path = new FolderBrowserDialog();
             path.SelectedPath = @"F:\BaiduYunDownload\化学文件\";
             path.ShowDialog();
-            this.textBox2 .Text = path.SelectedPath;
+            this.textBox2.Text = path.SelectedPath;
         }
 
         private void button3_Click(object sender, EventArgs e)
         {
-            getDirectoryUtoY(textBox1 .Text , false);
-            MessageBox.Show("U盘向硬盘同步完成！");
+            getDirectoryUtoY(textBox1.Text, false);            
             getDirectoryYtoU(textBox2.Text, false);
-            MessageBox.Show("硬盘向U盘同步完成！");
+            tianchong("同步完成！", "");
+        }
+        
+        private void button4_Click(object sender, EventArgs e)
+        {
+
+            panfu();
+        }
+        private  void  tianchong(string mulu,string s)
+        {
+            this.listView1.BeginUpdate();  //数据更新，UI暂时挂起，直到EndUpdate绘制控件，可以有效避免闪烁并大大提高加载速度 
+            ListViewItem lvi = new ListViewItem();
+            //lvi.ImageIndex = i;     //通过与imageList绑定，显示imageList中第i项图标 
+            lvi.Text = mulu ;
+            lvi.SubItems.Add(s);
+            this.listView1.Items.Add(lvi);
+            this.listView1.EndUpdate();  //结束数据处理，UI界面一次性绘制
+
+
+        }
+        private string panfu()
+        {
+            string s="";
+            DriveInfo[] allDrives = DriveInfo.GetDrives();
+            foreach (DriveInfo d in allDrives)
+            {
+                //判断是不是U盘
+                if (d.DriveType == DriveType.Removable)
+                {
+                    s = d.Name;
+                }
+            }
+            return s;
         }
     }
-}
-                                
+}                           
