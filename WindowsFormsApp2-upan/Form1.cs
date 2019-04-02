@@ -5,6 +5,7 @@ using System.Data;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -39,7 +40,7 @@ namespace WindowsFormsApp2_upan
         List<string> GongGongYingPanDirs = new List<string>();
         List<string> GongGongUPanDirs = new List<string>();
         List<string> allYingPanFiles = new List<string>();
-        
+        IniFiles ini = new IniFiles(Application.StartupPath + @"\MyConfig.INI");//Application.StartupPath只适用于winform窗体程序
         public Form1()
         {
             InitializeComponent();
@@ -52,7 +53,8 @@ namespace WindowsFormsApp2_upan
             //去掉标记以实现完全隐身状态（此状态只能从任务管理器处关闭程序）
             //TransparencyKey = Color.White  ;
             //Opacity = 0;
-            checkDirectory("D:/Music", "E:/Music");
+            
+            //checkDirectory("D:/Music", "E:/Music");
             s = panfu();
             if(s=="")
             {
@@ -64,10 +66,27 @@ namespace WindowsFormsApp2_upan
             {
                 textBox1.Enabled = true ;
                 textBox1.Text = s+"化学文件";
+                if (ini.ExistINIFile())//验证是否存在文件，存在就读取
+                {
+                    textBox1.Text = ini.IniReadValue("目录", "U盘");
+                    textBox2.Text = ini.IniReadValue("目录", "硬盘");
+                }
             }
 
         }
 
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            if (textBox1.Text== "请插入U盘")
+            {
+                ini.IniWriteValue("目录", "U盘", "");
+            }
+            else
+            {
+                ini.IniWriteValue("目录", "U盘", textBox1.Text);
+            }
+            ini.IniWriteValue("目录", "硬盘", textBox2.Text);
+        }
         private void checkDirectory(string patha, string pathb)
         {
             //设置两个路径或更多以保证适合不同的计算机，我教室的电脑就没有D盘
@@ -505,29 +524,34 @@ namespace WindowsFormsApp2_upan
             }
             base.WndProc(ref m);
         }
+
+
         private void button1_Click(object sender, EventArgs e)
         {
             FolderBrowserDialog path = new FolderBrowserDialog();
-            path.SelectedPath = @"i:\化学文件\";
+            path.SelectedPath = ini.IniReadValue("目录", "U盘");
             path.ShowDialog();
             this.textBox1.Text = path.SelectedPath;
         }
+
 
         private void button2_Click(object sender, EventArgs e)
         {
             FolderBrowserDialog path = new FolderBrowserDialog();
             //path.SelectedPath = @"F:\BaiduYunDownload\化学文件\"; 
-            path.SelectedPath = @"E:\化学文件测试";
+            path.SelectedPath = ini.IniReadValue("目录", "硬盘");
             path.ShowDialog();
             this.textBox2.Text = path.SelectedPath;
         }        
-        
+        //清空listbox
         private void button4_Click(object sender, EventArgs e)
         {
             listView1.Items .Clear ();
             
         }
+
         static int it = 2;
+        //填充listbox
         private  void  tianchong(string mulu,string s)
         {
             
@@ -567,7 +591,7 @@ namespace WindowsFormsApp2_upan
             }
             return s;
         }
-
+        //定时器事件：检查是否有U盘插入，直到有U盘插入时，停止事件发生
         private void JianChaUPan(object sender, EventArgs e)
         {
             string s = "";
@@ -592,6 +616,57 @@ namespace WindowsFormsApp2_upan
             getDirectoryUtoY(textBox1.Text, false);
             //getDirectoryYtoU(textBox2.Text, false);
             tianchong("", "同步完成！");
+        }
+    }
+    public class IniFiles
+    {
+        public string inipath;
+
+        //声明API函数
+
+        [DllImport("kernel32")]
+        private static extern long WritePrivateProfileString(string section, string key, string val, string filePath);
+        [DllImport("kernel32")]
+        private static extern int GetPrivateProfileString(string section, string key, string def, StringBuilder retVal, int size, string filePath);
+        /// <summary> 
+        /// 构造方法 
+        /// </summary> 
+        /// <param name="INIPath">文件路径</param> 
+        public IniFiles(string INIPath)
+        {
+            inipath = INIPath;
+        }
+
+        public IniFiles() { }
+
+        /// <summary> 
+        /// 写入INI文件 
+        /// </summary> 
+        /// <param name="Section">项目名称(如 [TypeName] )</param> 
+        /// <param name="Key">键</param> 
+        /// <param name="Value">值</param> 
+        public void IniWriteValue(string Section, string Key, string Value)
+        {
+            WritePrivateProfileString(Section, Key, Value, this.inipath);
+        }
+        /// <summary> 
+        /// 读出INI文件 
+        /// </summary> 
+        /// <param name="Section">项目名称(如 [TypeName] )</param> 
+        /// <param name="Key">键</param> 
+        public string IniReadValue(string Section, string Key)
+        {
+            StringBuilder temp = new StringBuilder(500);
+            int i = GetPrivateProfileString(Section, Key, "", temp, 500, this.inipath);
+            return temp.ToString();
+        }
+        /// <summary> 
+        /// 验证文件是否存在 
+        /// </summary> 
+        /// <returns>布尔值</returns> 
+        public bool ExistINIFile()
+        {
+            return File.Exists(inipath);
         }
     }
 }                           
