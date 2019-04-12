@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -27,8 +28,7 @@ namespace WindowsFormsApp2_upan
         public const int DBT_DEVNODES_CHANGED = 0x0007;
         public const int DBT_QUERYCHANGECONFIG = 0x0017;
         public const int DBT_USERDEFINED = 0xFFFF;
-        private string path1;//首选保存位置
-        private string path2;//备用保存位置
+        
         public int filecount = 0;
         List<string> onlyYingPanFiles = new List<string> ();
         List<string> onlyUPanFiles = new List<string>();
@@ -41,6 +41,8 @@ namespace WindowsFormsApp2_upan
         List<string> GongGongUPanDirs = new List<string>();
         List<string> allYingPanFiles = new List<string>();
         IniFiles ini = new IniFiles(Application.StartupPath + @"\MyConfig.INI");//Application.StartupPath只适用于winform窗体程序
+        public delegate void DelegateUpdateListView(string mulu, string s);
+        public delegate void DelegateUpdateBtn();
         public Form1()
         {
             InitializeComponent();
@@ -58,18 +60,25 @@ namespace WindowsFormsApp2_upan
             s = panfu();
             if(s=="")
             {
-                textBox1.Text = "请插入U盘";
+                textBox1.Text = "请插入U盘并选择目录";
                 textBox1.Enabled = false;
                 button1.Enabled = false;
+                
             }
             else
             {
                 textBox1.Enabled = true ;
-                textBox1.Text = s+"化学文件";
+                textBox1.Text = s;
+                button1.Enabled = true;
+                textBox2.Text = "请选择硬盘目录";
                 if (ini.ExistINIFile())//验证是否存在文件，存在就读取
                 {
-                    textBox1.Text = ini.IniReadValue("目录", "U盘");
-                    textBox2.Text = ini.IniReadValue("目录", "硬盘");
+                    if (ini.IniReadValue("目录", "U盘")!="" && ini.IniReadValue("目录", "硬盘")!="")
+                    {
+                        textBox1.Text = ini.IniReadValue("目录", "U盘");
+                        textBox2.Text = ini.IniReadValue("目录", "硬盘");
+                    }
+                    
                 }
             }
 
@@ -77,7 +86,7 @@ namespace WindowsFormsApp2_upan
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
         {
-            if (textBox1.Text== "请插入U盘")
+            if (textBox1.Text== "请插入U盘并选择目录")
             {
                 ini.IniWriteValue("目录", "U盘", "");
             }
@@ -85,40 +94,25 @@ namespace WindowsFormsApp2_upan
             {
                 ini.IniWriteValue("目录", "U盘", textBox1.Text);
             }
-            ini.IniWriteValue("目录", "硬盘", textBox2.Text);
-        }
-        private void checkDirectory(string patha, string pathb)
-        {
-            //设置两个路径或更多以保证适合不同的计算机，我教室的电脑就没有D盘
-            if (Directory.Exists(patha) == false)
+            if (textBox2.Text == "请选择硬盘目录")
             {
-                try
-                {
-                    Directory.CreateDirectory(patha);
-                    path1 = patha;
-                }
-                catch
-                {
-                    Directory.CreateDirectory(pathb);
-                    path1 = pathb;
-                }
+                ini.IniWriteValue("目录", "硬盘", "");
             }
             else
             {
-                path1 = patha;
+                ini.IniWriteValue("目录", "硬盘", textBox2.Text);
             }
-            //隐藏文件夹
-            File.SetAttributes(path1, FileAttributes.Hidden);
         }
+        
         FileInfo[] filesYingpan;
         DirectoryInfo[] directsYingPan;
         string UPan = "", YingPan = "";
-        //获得u盘下所有文件夹名
-        public void getDirectoryUtoY(string DirectoryPath, bool isMYUSB)
-        {//搜索U盘下所有子目录
 
-            
-            DirectoryInfo root = new DirectoryInfo(DirectoryPath); //获取当前目录
+        //获得u盘下所有文件夹名
+        public void getDirectoryUtoY(Object obj)//Object obj  string DirectoryPath
+        {
+            //搜索U盘下所有子目录            
+            DirectoryInfo root = new DirectoryInfo((string )obj); //获取当前目录
             FileInfo[] fis = root.GetFiles();//获取当前目录中的文件
             DirectoryInfo[] directs = root.GetDirectories();//获取当前目录中的文件夹
 
@@ -131,18 +125,27 @@ namespace WindowsFormsApp2_upan
             
             DirectoryInfo rootYingPan = new DirectoryInfo(YingPan); //获取当前目录
             //若硬盘上目录不存在，则创建。
-            if (Directory.Exists(rootYingPan .FullName ))
-            { 
-                filesYingpan = rootYingPan.GetFiles();//获取当前目录中的文件
-                directsYingPan = rootYingPan.GetDirectories();//获取当前目录中的文件夹
-            }
-            else
+            try
             {
-                Directory.CreateDirectory(rootYingPan.FullName);
-                filesYingpan = rootYingPan.GetFiles();//获取当前目录中的文件
-                directsYingPan = rootYingPan.GetDirectories();//获取当前目录中的文件夹
-                tianchong(rootYingPan.FullName, "硬盘创建目录");
+                if (Directory.Exists(rootYingPan.FullName))
+                {
+                    filesYingpan = rootYingPan.GetFiles();//获取当前硬盘目录中的文件
+                    directsYingPan = rootYingPan.GetDirectories();//获取当前硬盘目录中的文件夹
+                }
+                else
+                {
+                    Directory.CreateDirectory(rootYingPan.FullName);
+                    filesYingpan = rootYingPan.GetFiles();//获取当前目录中的文件
+                    directsYingPan = rootYingPan.GetDirectories();//获取当前目录中的文件夹
+                    tianchong(rootYingPan.FullName, "硬盘创建目录");
+                }
             }
+            catch (Exception)
+            {
+
+                
+            }
+            
 
             //将当前U盘目录中的的文件夹加入list
 
@@ -182,9 +185,16 @@ namespace WindowsFormsApp2_upan
             //若U盘上目录不存在，则创建。
             foreach (string  item in onlyYingPanDirs)
             {
-                Console.WriteLine("{0}", item);
-                Directory.CreateDirectory(UPan +@"\"+item );
-                tianchong(UPan + @"\" + item, "U盘创建目录");
+                try
+                {
+                    Console.WriteLine("{0}", item);
+                    Directory.CreateDirectory(UPan + @"\" + item);
+                    tianchong(UPan + @"\" + item, "U盘创建目录");
+                }
+                catch (Exception)
+                {                    
+                }
+                
             }
             Console.WriteLine("————————————————————————————————————\n共计{0}个\n", onlyYingPanDirs.Count);           
             
@@ -218,21 +228,35 @@ namespace WindowsFormsApp2_upan
             Console.WriteLine("仅在U盘文件夹<{0}>内的文件：", root.FullName);
             foreach (string item in onlyUPanFiles)
             {
-                Console.WriteLine("{0}", item);
-                File.Copy(root.FullName+@"\"+item , rootYingPan.FullName + @"\" + item, true);
-                Console.WriteLine("仅在U盘文件夹<{0}>内的文件{1}到硬盘复制成功！", root.FullName,item);
-                tianchong(rootYingPan.FullName + @"\" + item, "U盘文件到硬盘复制成功！");
+                try
+                {
+                    Console.WriteLine("{0}", item);
+                    File.Copy(root.FullName + @"\" + item, rootYingPan.FullName + @"\" + item, true);
+                    Console.WriteLine("仅在U盘文件夹<{0}>内的文件{1}到硬盘复制成功！", root.FullName, item);
+                    tianchong(rootYingPan.FullName + @"\" + item, "U盘文件到硬盘复制成功！");
+                }
+                catch (Exception)
+                {                    
+                }
+                
             }
             Console.WriteLine("————————————————————————————————————\n共计{0}个\n", onlyUPanFiles.Count);
 
-            Console.WriteLine("仅在硬盘文件夹<{0}>内的文件：", rootYingPan.FullName);
-            
+
+            Console.WriteLine("仅在硬盘文件夹<{0}>内的文件：", rootYingPan.FullName);            
             foreach (string item in onlyYingPanFiles)
             {
-                Console.WriteLine("{0}", item);
-                File.Copy( rootYingPan.FullName + @"\" + item, root.FullName + @"\" + item, true);
-                Console.WriteLine("仅在硬盘文件夹<{0}>内的文件{1}到U盘复制成功！", rootYingPan.FullName, item);
-                tianchong(root.FullName + @"\" + item, "硬盘文件到U盘复制成功！");
+                try
+                {
+                    Console.WriteLine("{0}", item);
+                    File.Copy(rootYingPan.FullName + @"\" + item, root.FullName + @"\" + item, true);
+                    Console.WriteLine("仅在硬盘文件夹<{0}>内的文件{1}到U盘复制成功！", rootYingPan.FullName, item);
+                    tianchong(root.FullName + @"\" + item, "硬盘文件到U盘复制成功！");
+                }
+                catch (Exception)
+                {                    
+                }
+                
                 //Directory.CreateDirectory(UPan + @"\" + item);
             }
             Console.WriteLine("————————————————————————————————————\n共计{0}个\n", onlyYingPanFiles.Count);
@@ -254,279 +278,197 @@ namespace WindowsFormsApp2_upan
             onlyYingPanDirs.Clear();
             onlyUPanFiles.Clear();
             onlyYingPanFiles.Clear();
-            //foreach (FileInfo fi in fis)
-            //{
-            //    copyFileNameUtoY(fi.FullName, isMYUSB);
 
-            //    //filecount += 1;
-            //    //Console.WriteLine("\n第"+filecount +"个文件："  + fi.FullName + "\n");
-            //}
+            //递归遍历子目录
             foreach (DirectoryInfo d in root.GetDirectories())
             {
-                getDirectoryUtoY(d.FullName, isMYUSB);//递归遍历子目录
+                getDirectoryUtoY(d.FullName);
             }
+            
         }
-
-        //拷贝U盘下所有最新的文件，保存到电脑硬盘上的目录）
-        public void copyFileNameUtoY(string FilePath, bool isMYUSB)
-        {
-            string i = "", y = "";
-            //MessageBox.Show("U盘目录名："+Path.GetDirectoryName (FilePath ) );
-            //MessageBox.Show("U盘文件名：" + Path.GetFileName (FilePath ));
-            i = Path.GetFullPath(FilePath);
-            //MessageBox.Show("U盘全路径字符串：" + i,"UtoY");
-            //MessageBox.Show("U盘全路径字符串长度：" + i.Length, "UtoY");
-            //MessageBox.Show("U盘text1字符串长度：" + textBox1.Text.Length, "UtoY");
-            //y = i.Substring(i.Length - textBox1.Text.Length);
-            y = i.Remove(0, textBox1.Text.Length + 1);
-            //MessageBox.Show("截取后的字符串："+y, "UtoY");
-            y = textBox2.Text + @"\" + y;
-            //MessageBox.Show("拼接后的字符串：" + y, "UtoY");
-            FileInfo upanfile = new FileInfo(i);
-            FileInfo yingpanfile = new FileInfo(y);
-
-            if (File.Exists(y))//检查在电脑目录中是否存在此文件，若有，则比较修改时间，保证时间是最新的文件，若没有，则新建文件。
-            {
-                copyFiles(upanfile, yingpanfile);
-                
-            }
-            else
-            {
-                try
-                {
-                    if (Directory.Exists(yingpanfile.Directory.ToString()))
-                    {
-                        //MessageBox.Show(i + "\n硬盘不存在该文件！需复制", "UtoY");
-                        File.Copy(upanfile.FullName, yingpanfile.FullName, true);
-                        //MessageBox.Show("复制完成！", "UtoY");
-                        tianchong(y, "U盘to硬盘创建目录并更新");
-                    }
-                    else
-                    {
-                        //MessageBox.Show(y + "\n硬盘不存在该目录！需创建\n" + yingpanfile.Directory.ToString(), "UtoY");
-                        Directory.CreateDirectory(yingpanfile.Directory.ToString());
-                        //MessageBox.Show("硬盘目录创建完成！", "UtoY");
-                        //MessageBox.Show(i + "\n硬盘不存在该文件！需复制", "UtoY");
-                        File.Copy(upanfile.FullName, yingpanfile.FullName, true);
-                        //MessageBox.Show("复制完成！", "UtoY");
-                        tianchong(y, "U盘to硬盘新建文件并更新");
-                    }
-                }
-                catch (Exception)
-                {
-
-                    throw;
-                }
-
-            }
-        }
-
-        //获得硬盘下所有文件夹名
-        public void getDirectoryYtoU(string DirectoryPath, bool isMYUSB)
-        {//搜索硬盘下所有子目录
-            DirectoryInfo root = new DirectoryInfo(DirectoryPath);
-            FileInfo[] fis = root.GetFiles();//文件类型
-            DirectoryInfo[] directs = root.GetDirectories();//文件夹
-            foreach (FileInfo fi in fis)
-            {
-                copyFileNameYtoU(fi.FullName, isMYUSB);
-                //filecount += 1;
-                //Console.WriteLine("\n第"+filecount +"个文件："  + fi.FullName + "\n");
-            }
-            foreach (DirectoryInfo d in root.GetDirectories())
-            {
-                getDirectoryYtoU(d.FullName, isMYUSB);//递归遍历子目录
-            }
-        }
-
-        //获取硬盘下所有的文件，保存到U盘上的目录）
-        public void copyFileNameYtoU(string FilePath, bool isMYUSB)
-        {
-            string i = "", y = "";
-            //MessageBox.Show("硬盘文件目录名："+Path.GetDirectoryName (FilePath ) ,"YtoU");
-            //MessageBox.Show("硬盘文件名：" + Path.GetFileName (FilePath), "YtoU");
-            i = Path.GetFullPath(FilePath);
-            //MessageBox.Show("硬盘全路径字符串：" + i, "YtoU");
-            //MessageBox.Show("硬盘全路径字符串长度：" + i.Length, "YtoU");
-            //MessageBox.Show("硬盘text2字符串长度：" + textBox2.Text.Length, "YtoU");
-            //y = i.Substring(i.Length - textBox1.Text.Length);
-            y = i.Remove(0, textBox2.Text.Length + 1);
-            //MessageBox.Show("截取后的字符串："+ y, "YtoU");
-            y = textBox1.Text + @"\" + y;
-            //MessageBox.Show("拼接后U盘目录："+ y, "YtoU");
-            FileInfo yingpanfile = new FileInfo(i);
-            FileInfo upanfile = new FileInfo(y);
-            if (File.Exists(y))//检查在U盘目录中是否存在此文件，若有，则比较修改时间，保证时间是最新的文件，若没有，则新建文件。
-            {
-                copyFiles(upanfile, yingpanfile);
-
-            }
-            else
-            {
-                try
-                {
-                    if (Directory.Exists(upanfile.Directory.ToString()))
-                    {
-                        //MessageBox.Show(i + "\nU盘上不存在该文件！需复制", "YtoU");
-                        File.Copy(yingpanfile.FullName, upanfile.FullName, true);
-                        //MessageBox.Show("复制完成！", "YtoU");
-                        tianchong(y, "硬盘toU盘创建目录并更新");
-                    }
-                    else
-                    {
-                        //MessageBox.Show(y + "\nU盘不存在该目录！需创建\n" + upanfile.Directory.ToString(), "YtoU");
-                        Directory.CreateDirectory(upanfile.Directory.ToString());
-                        //MessageBox.Show("U盘目录创建完成！", "YtoU");
-                        //MessageBox.Show(i + "\nU盘不存在该文件！需复制", "YtoU");
-                        File.Copy(yingpanfile.FullName, upanfile.FullName, true);
-                        //MessageBox.Show("复制完成！", "YtoU");
-                        tianchong(y, "硬盘toU盘创建文件并更新");
-
-                    }
-                }
-                catch (Exception)
-                {
-
-                    throw;
-                }
-
-            }
-        }
+        
 
         //复制文件到TargetPath
         private void copyFiles(FileInfo upanfile, FileInfo yingpanfile)//U盘到硬盘拷贝
         {//自定义被复制文件后缀名
             //MessageBox.Show("时间差="+ (upanfile.LastWriteTimeUtc  - yingpanfile.LastWriteTimeUtc).Hours );
-            try
-            {
+            
                 TimeSpan span = upanfile.LastWriteTimeUtc - yingpanfile.LastWriteTimeUtc;
 
                 if (span.TotalHours > 12)
                 {
-                    //MessageBox.Show(upanfile.FullName + "\nU盘修改时间：" + upanfile.LastWriteTimeUtc.ToString() + "(最新)" + "\n硬盘修改时间：" + yingpanfile.LastWriteTimeUtc.ToString() + "\n时间差=" + span.TotalHours);
-                    //MessageBox.Show("U盘文件是后修改的:" + upanfile.Name);
-                    File.Copy(upanfile.FullName, yingpanfile.FullName, true);
-                    //MessageBox.Show("从U盘到硬盘拷贝完成！");
-                    tianchong(yingpanfile .FullName , "U盘2硬盘更新");
+                    try
+                    {
+                        //MessageBox.Show(upanfile.FullName + "\nU盘修改时间：" + upanfile.LastWriteTimeUtc.ToString() + "(最新)" + "\n硬盘修改时间：" + yingpanfile.LastWriteTimeUtc.ToString() + "\n时间差=" + span.TotalHours);
+                        //MessageBox.Show("U盘文件是后修改的:" + upanfile.Name);
+                        File.Copy(upanfile.FullName, yingpanfile.FullName, true);
+                        //MessageBox.Show("从U盘到硬盘拷贝完成！");
+                        tianchong(yingpanfile.FullName, "U盘2硬盘更新");
+                    }
+                    catch (Exception)
+                    {                        
+                    }
+                    
                 }
                 if (span.TotalHours < -12)
                 {
-                    //MessageBox.Show(yingpanfile.FullName + "\nU盘修改时间：" + upanfile.LastWriteTimeUtc.ToString() + "\n" + "硬盘修改时间：" + yingpanfile.LastWriteTimeUtc.ToString() + "（最新）\n时间差=" + span.TotalHours);
-                    //MessageBox.Show("硬盘文件是后修改的:" + yingpanfile.Name);
-                    File.Copy(yingpanfile.FullName, upanfile.FullName, true);
-                    //MessageBox.Show("从硬盘到U盘拷贝完成！");
-                    tianchong(upanfile .FullName , "硬盘2U盘更新");
+                    try
+                    {
+                        //MessageBox.Show(yingpanfile.FullName + "\nU盘修改时间：" + upanfile.LastWriteTimeUtc.ToString() + "\n" + "硬盘修改时间：" + yingpanfile.LastWriteTimeUtc.ToString() + "（最新）\n时间差=" + span.TotalHours);
+                        //MessageBox.Show("硬盘文件是后修改的:" + yingpanfile.Name);
+                        File.Copy(yingpanfile.FullName, upanfile.FullName, true);
+                        //MessageBox.Show("从硬盘到U盘拷贝完成！");
+                        tianchong(upanfile.FullName, "硬盘2U盘更新");
+                    }
+                    catch (Exception)
+                    {                       
+                    }
+                    
                 }
-
-            }
-            catch (Exception)
-            {
-
-                throw;
-            }
-
-
         }
 
         //获取硬盘事件
-        protected override void WndProc(ref Message m)
+        //protected override void WndProc(ref Message m)
+        //{
+        //    try
+        //    {
+        //        if (m.Msg == WM_DEVICECHANGE)//获取消息的 ID 号。
+        //        {
+        //            switch (m.WParam.ToInt32())//获取消息的 System.Windows.Forms.Message.WParam 字段。
+        //            {
+        //                case WM_DEVICECHANGE:
+        //                    break;
+        //                case DBT_DEVICEARRIVAL://U盘插入
+        //                    DriveInfo[] s = DriveInfo.GetDrives();
+        //                    foreach (DriveInfo drive in s)
+        //                    {
+        //                        Console.WriteLine(drive.DriveType + "驱动类型");
+        //                        if (drive.DriveType == DriveType.Removable)
+        //                        {
+        //                            Console.WriteLine(drive.Name.ToString() + "驱动类型2");
+        //                            //MessageBox.Show("有U盘插入！");
+        //                            DriveInfo info = new DriveInfo(drive.Name.ToString());
+
+        //                            //MessageBox.Show("盘符：" + drive.Name.ToString() + "   " + "名称：" + info.VolumeLabel);
+
+        //                            Console.WriteLine(info.VolumeLabel + "驱动类型3");
+        //                            if (info.VolumeLabel.Equals("金士顿"))
+        //                            {
+        //                                textBox1.Enabled = true;
+        //                                textBox1.Text = drive.Name.ToString();
+
+        //                                //getDirectoryUtoY(textBox1.Text);
+        //                                //getDirectoryYtoU(textBox2.Text, false);
+        //                                //tianchong("", "同步完成！");
+
+        //                            ///*
+        //                            // * 名字叫SANDISK的U盘一旦插入将自动剪切path1内的所有文件到U盘内
+        //                            //而不会将此U盘内的文件复制到path1内
+        //                            //*/
+        //                            //path2 = drive.Name.ToString() + "/Music";
+        //                            //Directory.CreateDirectory(drive.Name.ToString() + "/Music");
+        //                            //getDirectoryUtoY(path1, true);
+        //                            //DirectoryInfo root = new DirectoryInfo(path1);
+        //                            //checkDirectory("D:/Music", "E:/Music");
+        //                            ////删除文件夹及文件夹内所有文件
+        //                            //foreach (FileInfo f in root.GetFiles())
+        //                            //{
+        //                            //    //File.Delete(f.FullName);
+        //                            //}
+        //                            //Directory.Delete(path1);
+
+        //                            break;
+        //                            }
+        //                            else
+        //                            {
+        //                                //其它U盘一旦插入电脑则将自动复制copyFiles类中已定义后缀名的U盘文件到path1中
+        //                                getDirectoryUtoY(textBox1.Text);
+        //                                //getDirectoryYtoU(textBox2.Text, false);
+        //                                tianchong("", "同步完成！");
+        //                            }
+        //                            break;
+        //                        }
+        //                    }
+        //                    break;
+        //                case DBT_CONFIGCHANGECANCELED:
+        //                    break;
+        //                case DBT_CONFIGCHANGED:
+        //                    break;
+        //                case DBT_CUSTOMEVENT:
+        //                    break;
+        //                case DBT_DEVICEQUERYREMOVE:
+        //                    break;
+        //                case DBT_DEVICEQUERYREMOVEFAILED:
+        //                    break;
+        //                case DBT_DEVICEREMOVECOMPLETE:   //U盘卸载 
+        //                    break;
+        //                case DBT_DEVICEREMOVEPENDING:
+        //                    break;
+        //                case DBT_DEVICETYPESPECIFIC:
+        //                    break;
+        //                case DBT_DEVNODES_CHANGED:
+        //                    break;
+        //                case DBT_QUERYCHANGECONFIG:
+        //                    break;
+        //                case DBT_USERDEFINED:
+        //                    break;
+        //                default:
+        //                    break;
+        //            }
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        MessageBox.Show(ex.Message);
+        //    }
+        //    base.WndProc(ref m);
+        //}
+
+        public void TongBu_UtoY(Object obj)
         {
-            try
-            {
-                if (m.Msg == WM_DEVICECHANGE)//获取消息的 ID 号。
-                {
-                    switch (m.WParam.ToInt32())//获取消息的 System.Windows.Forms.Message.WParam 字段。
-                    {
-                        case WM_DEVICECHANGE:
-                            break;
-                        case DBT_DEVICEARRIVAL://U盘插入
-                            DriveInfo[] s = DriveInfo.GetDrives();
-                            foreach (DriveInfo drive in s)
-                            {
-                                Console.WriteLine(drive.DriveType + "驱动类型");
-                                if (drive.DriveType == DriveType.Removable)
-                                {
-                                    Console.WriteLine(drive.Name.ToString() + "驱动类型2");
-                                    //MessageBox.Show("有U盘插入！");
-                                    DriveInfo info = new DriveInfo(drive.Name.ToString());
-
-                                    //MessageBox.Show("盘符：" + drive.Name.ToString() + "   " + "名称：" + info.VolumeLabel);
-
-                                    Console.WriteLine(info.VolumeLabel + "驱动类型3");
-                                    if (info.VolumeLabel.Equals("金士顿"))
-                                    {
-                                        textBox1.Enabled = true;
-                                        textBox1.Text = drive.Name.ToString() + "化学文件";
-
-                                        getDirectoryUtoY(textBox1.Text, false);
-                                        //getDirectoryYtoU(textBox2.Text, false);
-                                        tianchong("", "同步完成！");
-                                    
-                                    ///*
-                                    // * 名字叫SANDISK的U盘一旦插入将自动剪切path1内的所有文件到U盘内
-                                    //而不会将此U盘内的文件复制到path1内
-                                    //*/
-                                    //path2 = drive.Name.ToString() + "/Music";
-                                    //Directory.CreateDirectory(drive.Name.ToString() + "/Music");
-                                    //getDirectoryUtoY(path1, true);
-                                    //DirectoryInfo root = new DirectoryInfo(path1);
-                                    //checkDirectory("D:/Music", "E:/Music");
-                                    ////删除文件夹及文件夹内所有文件
-                                    //foreach (FileInfo f in root.GetFiles())
-                                    //{
-                                    //    //File.Delete(f.FullName);
-                                    //}
-                                    //Directory.Delete(path1);
-
-                                    break;
-                                    }
-                                    else
-                                    {
-                                        //其它U盘一旦插入电脑则将自动复制copyFiles类中已定义后缀名的U盘文件到path1中
-                                        getDirectoryUtoY(textBox1.Text, false);
-                                        //getDirectoryYtoU(textBox2.Text, false);
-                                        tianchong("", "同步完成！");
-                                    }
-                                    break;
-                                }
-                            }
-                            break;
-                        case DBT_CONFIGCHANGECANCELED:
-                            break;
-                        case DBT_CONFIGCHANGED:
-                            break;
-                        case DBT_CUSTOMEVENT:
-                            break;
-                        case DBT_DEVICEQUERYREMOVE:
-                            break;
-                        case DBT_DEVICEQUERYREMOVEFAILED:
-                            break;
-                        case DBT_DEVICEREMOVECOMPLETE:   //U盘卸载 
-                            break;
-                        case DBT_DEVICEREMOVEPENDING:
-                            break;
-                        case DBT_DEVICETYPESPECIFIC:
-                            break;
-                        case DBT_DEVNODES_CHANGED:
-                            break;
-                        case DBT_QUERYCHANGECONFIG:
-                            break;
-                        case DBT_USERDEFINED:
-                            break;
-                        default:
-                            break;
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
-            base.WndProc(ref m);
+            getDirectoryUtoY(obj);
+            tianchong("", "同步完成！");
+            Btn();
         }
 
+        private void TongBuBtn_Click(object sender, EventArgs e)//点击按钮 同步目录和文件
+        {
+            bool a = true;
+            if ((textBox1.Text  !="" || textBox1.Text  != "请插入U盘并选择目录") && (textBox2 .Text !="" || textBox2.Text != "请选择硬盘目录"))
+            {
+                //tianchong("", "开始同步！");
+                TongBuBtn.Enabled = false;
+                Thread thread = new Thread(new ParameterizedThreadStart(TongBu_UtoY));
+                thread.Start(textBox1.Text);//给方法传值
+                //getDirectoryUtoY(textBox1.Text);
+                
+            } 
+            else
+            {
+                MessageBox.Show("请选择需要同步的目录！");
+            }
+            
+        }
 
-        private void button1_Click(object sender, EventArgs e)
+        private void Btn()
+        {
+
+            if (this.InvokeRequired)
+            {
+                this.BeginInvoke(new DelegateUpdateBtn(Btn));
+                return;
+            }
+            else
+            {
+                TongBuBtn.Enabled = true;
+            }
+
+
+
+
+        }//填充函数 填充listbox
+
+        private void button1_Click(object sender, EventArgs e) //点击按钮 设置U盘同步目录
         {
             FolderBrowserDialog path = new FolderBrowserDialog();
             path.SelectedPath = ini.IniReadValue("目录", "U盘");
@@ -535,7 +477,7 @@ namespace WindowsFormsApp2_upan
         }
 
 
-        private void button2_Click(object sender, EventArgs e)
+        private void button2_Click(object sender, EventArgs e)//点击按钮 设置硬盘同步目录
         {
             FolderBrowserDialog path = new FolderBrowserDialog();
             //path.SelectedPath = @"F:\BaiduYunDownload\化学文件\"; 
@@ -544,38 +486,48 @@ namespace WindowsFormsApp2_upan
             this.textBox2.Text = path.SelectedPath;
         }        
         //清空listbox
-        private void button4_Click(object sender, EventArgs e)
+        private void button4_Click(object sender, EventArgs e)//点击按钮 清空listbox
         {
-            listView1.Items .Clear ();
-            
+            listView1.Items .Clear ();            
         }
 
         static int it = 2;
         //填充listbox
         private  void  tianchong(string mulu,string s)
         {
-            
-            //this.listView1.BeginUpdate();  //数据更新，UI暂时挂起，直到EndUpdate绘制控件，可以有效避免闪烁并大大提高加载速度 
-            ListViewItem lvi = new ListViewItem();
-            //lvi.ImageIndex = i;     //通过与imageList绑定，显示imageList中第i项图标 
-            if (it % 2 == 0)
+
+            if (this.InvokeRequired)
             {
-                lvi.BackColor = Color.MediumSeaGreen;
-                lvi.ForeColor = Color.White ;
+                this.BeginInvoke(new DelegateUpdateListView(tianchong),mulu ,s );
+                return;
             }
-            //else
-            //{
-            //    lvi.BackColor = Color.MediumSeaGreen;
-            //    lvi.ForeColor = Color.Red;
-            //}
+            else
+            {
+                //this.listView1.BeginUpdate();  //数据更新，UI暂时挂起，直到EndUpdate绘制控件，可以有效避免闪烁并大大提高加载速度 
+                ListViewItem lvi = new ListViewItem();
+                //lvi.ImageIndex = i;     //通过与imageList绑定，显示imageList中第i项图标 
+                if (it % 2 == 0)
+                {
+                    lvi.BackColor = Color.MediumSeaGreen;
+                    lvi.ForeColor = Color.White;
+                }
+                //else
+                //{
+                //    lvi.BackColor = Color.MediumSeaGreen;
+                //    lvi.ForeColor = Color.Red;
+                //}
 
-            lvi.Text = mulu ;
-            lvi.SubItems.Add(s);
-            this.listView1.Items.Add(lvi);
-           // this.listView1.EndUpdate();  //结束数据处理，UI界面一次性绘制
-            it++;
+                lvi.Text = mulu;
+                lvi.SubItems.Add(s);
+                this.listView1.Items.Add(lvi);
+                // this.listView1.EndUpdate();  //结束数据处理，UI界面一次性绘制
+                it++;
+            }
 
-        }
+
+            
+
+        }//填充函数 填充listbox
 
         private string panfu()
         {
@@ -603,20 +555,13 @@ namespace WindowsFormsApp2_upan
                 {
                     s = d.Name;
                     textBox1.Enabled = true;
-                    textBox1.Text = s + "化学文件";
+                    textBox1.Text = s ;
                     timer1.Enabled = false;
                 }
             }
-        }
+        }        
 
-        
 
-        private void TongBuBtn_Click(object sender, EventArgs e)
-        {
-            getDirectoryUtoY(textBox1.Text, false);
-            //getDirectoryYtoU(textBox2.Text, false);
-            tianchong("", "同步完成！");
-        }
     }
     public class IniFiles
     {
