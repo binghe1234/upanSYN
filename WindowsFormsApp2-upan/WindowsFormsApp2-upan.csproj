@@ -101,6 +101,7 @@
     <Compile Include="MyService11.Designer.cs">
       <DependentUpon>MyService11.cs</DependentUpon>
     </Compile>
+    <Compile Include="Settings.cs" />
     <EmbeddedResource Include="Form1.resx">
       <DependentUpon>Form1.cs</DependentUpon>
     </EmbeddedResource>

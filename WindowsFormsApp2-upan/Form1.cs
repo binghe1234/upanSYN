@@ -43,6 +43,9 @@ namespace WindowsFormsApp2_upan
         IniFiles ini = new IniFiles(Application.StartupPath + @"\MyConfig.INI");//Application.StartupPath只适用于winform窗体程序
         public delegate void DelegateUpdateListView(string mulu, string s);
         public delegate void DelegateUpdateBtn();
+
+        string UPanpath = null;
+        string YingPanpath = null;
         public Form1()
         {
             InitializeComponent();
@@ -63,10 +66,12 @@ namespace WindowsFormsApp2_upan
                 textBox1.Text = "请插入U盘并选择目录";
                 textBox1.Enabled = false;
                 button1.Enabled = false;
+                timer1.Enabled = true;
                 
             }
             else
             {
+
                 textBox1.Enabled = true ;
                 textBox1.Text = s;
                 button1.Enabled = true;
@@ -80,6 +85,53 @@ namespace WindowsFormsApp2_upan
                     }
                     
                 }
+
+                UPanpath = Application.StartupPath + @"\UPanPath.ini";
+                if (File.Exists(UPanpath))
+                {
+                    //读取配置文件，并加载到combobox选项中，默认选中第一个选项
+                    //StreamReader sr = new StreamReader(path,Encoding.Default);
+
+                    StreamReader sr = new StreamReader(UPanpath, true);
+
+                    while (sr.Peek() > 0)
+                    {
+                        comboBox_UPan.Items.Add(sr.ReadLine());
+                    }
+                    sr.Close();
+                    //选中combobox第一个
+                    comboBox_UPan.Text = (string)comboBox_UPan.Items[0];
+                }
+                
+                YingPanpath = Application.StartupPath + @"\YingPanPath.ini";
+                if (File.Exists(YingPanpath))
+                {
+                    //读取配置文件，并加载到combobox选项中，默认选中第一个选项
+                    //StreamReader sr = new StreamReader(path,Encoding.Default);
+
+                    StreamReader sr = new StreamReader(YingPanpath, true);
+
+                    while (sr.Peek() > 0)
+                    {
+                        comboBox_YingPan.Items.Add(sr.ReadLine());
+                    }
+                    sr.Close();
+                    //选中combobox第一个
+                    comboBox_YingPan.Text = (string)comboBox_YingPan.Items[0];
+                }
+                
+                //comboBox_UPan.Items.Add("1.");
+                //comboBox_UPan.Items.Add("2.");
+                //comboBox_UPan.Items.Add("3.");
+                //comboBox_UPan.Items.Add("4.");
+                //comboBox_UPan.SelectedIndex = 0;
+
+                //comboBox_YingPan.Items.Add("1.");
+                //comboBox_YingPan.Items.Add("2.");
+                //comboBox_YingPan.Items.Add("3.");
+                //comboBox_YingPan.Items.Add("4.");
+                //comboBox_YingPan.SelectedIndex = 1;
+
             }
 
         }
@@ -102,6 +154,19 @@ namespace WindowsFormsApp2_upan
             {
                 ini.IniWriteValue("目录", "硬盘", textBox2.Text);
             }
+
+            StreamWriter sw = new StreamWriter(UPanpath);
+            for (int i = 0; i < comboBox_UPan.Items.Count; i++)
+            {
+                sw.WriteLine(comboBox_UPan.Items[i]);
+            }
+            sw.Close();
+            StreamWriter sw1 = new StreamWriter(YingPanpath);
+            for (int i = 0; i < comboBox_YingPan.Items.Count; i++)
+            {
+                sw1.WriteLine(comboBox_YingPan.Items[i]);
+            }
+            sw1.Close();
         }
         
         FileInfo[] filesYingpan;
@@ -134,6 +199,7 @@ namespace WindowsFormsApp2_upan
                 }
                 else
                 {
+                    
                     Directory.CreateDirectory(rootYingPan.FullName);
                     filesYingpan = rootYingPan.GetFiles();//获取当前目录中的文件
                     directsYingPan = rootYingPan.GetDirectories();//获取当前目录中的文件夹
@@ -190,6 +256,7 @@ namespace WindowsFormsApp2_upan
                     Console.WriteLine("{0}", item);
                     Directory.CreateDirectory(UPan + @"\" + item);
                     tianchong(UPan + @"\" + item, "U盘创建目录");
+                    
                 }
                 catch (Exception)
                 {                    
@@ -234,6 +301,7 @@ namespace WindowsFormsApp2_upan
                     File.Copy(root.FullName + @"\" + item, rootYingPan.FullName + @"\" + item, true);
                     Console.WriteLine("仅在U盘文件夹<{0}>内的文件{1}到硬盘复制成功！", root.FullName, item);
                     tianchong(rootYingPan.FullName + @"\" + item, "U盘文件到硬盘复制成功！");
+                    
                 }
                 catch (Exception)
                 {                    
@@ -252,6 +320,7 @@ namespace WindowsFormsApp2_upan
                     File.Copy(rootYingPan.FullName + @"\" + item, root.FullName + @"\" + item, true);
                     Console.WriteLine("仅在硬盘文件夹<{0}>内的文件{1}到U盘复制成功！", rootYingPan.FullName, item);
                     tianchong(root.FullName + @"\" + item, "硬盘文件到U盘复制成功！");
+                    
                 }
                 catch (Exception)
                 {                    
@@ -293,7 +362,7 @@ namespace WindowsFormsApp2_upan
         {//自定义被复制文件后缀名
             //MessageBox.Show("时间差="+ (upanfile.LastWriteTimeUtc  - yingpanfile.LastWriteTimeUtc).Hours );
             
-                TimeSpan span = upanfile.LastWriteTimeUtc - yingpanfile.LastWriteTimeUtc;
+            TimeSpan span = upanfile.LastWriteTimeUtc - yingpanfile.LastWriteTimeUtc;
 
                 if (span.TotalHours > 12)
                 {
@@ -304,7 +373,8 @@ namespace WindowsFormsApp2_upan
                         File.Copy(upanfile.FullName, yingpanfile.FullName, true);
                         //MessageBox.Show("从U盘到硬盘拷贝完成！");
                         tianchong(yingpanfile.FullName, "U盘2硬盘更新");
-                    }
+                    
+                }
                     catch (Exception)
                     {                        
                     }
@@ -319,7 +389,8 @@ namespace WindowsFormsApp2_upan
                         File.Copy(yingpanfile.FullName, upanfile.FullName, true);
                         //MessageBox.Show("从硬盘到U盘拷贝完成！");
                         tianchong(upanfile.FullName, "硬盘2U盘更新");
-                    }
+                    
+                }
                     catch (Exception)
                     {                       
                     }
@@ -424,11 +495,11 @@ namespace WindowsFormsApp2_upan
         //    base.WndProc(ref m);
         //}
 
-        public void TongBu_UtoY(Object obj)
+        public void TongBu_UtoY(Object obj)//给程序加个壳，这样可以判定线程结束。
         {
             getDirectoryUtoY(obj);
             tianchong("", "同步完成！");
-            Btn();
+            Btn();            
         }
 
         private void TongBuBtn_Click(object sender, EventArgs e)//点击按钮 同步目录和文件
@@ -450,7 +521,7 @@ namespace WindowsFormsApp2_upan
             
         }
 
-        private void Btn()
+        private void Btn()//线程委托程序，在子线程中修改按钮值。
         {
 
             if (this.InvokeRequired)
@@ -466,7 +537,7 @@ namespace WindowsFormsApp2_upan
 
 
 
-        }//填充函数 填充listbox
+        }
 
         private void button1_Click(object sender, EventArgs e) //点击按钮 设置U盘同步目录
         {
@@ -474,6 +545,21 @@ namespace WindowsFormsApp2_upan
             path.SelectedPath = ini.IniReadValue("目录", "U盘");
             path.ShowDialog();
             this.textBox1.Text = path.SelectedPath;
+
+            StreamWriter sw = new StreamWriter(UPanpath, true);
+            if (!(comboBox_UPan.Items.Contains(textBox1 .Text)))//comboBox_UPan.Text
+            {
+                sw.WriteLine(textBox1.Text);
+                comboBox_UPan.Items.Insert(0, textBox1.Text);
+                comboBox_UPan.Text = (string)comboBox_UPan.Items[0];
+            }
+            else
+            {
+                comboBox_UPan.Items .RemoveAt ( comboBox_UPan.FindString(textBox1.Text ));
+                comboBox_UPan.Items.Insert(0, textBox1.Text);
+                comboBox_UPan.Text = (string)comboBox_UPan.Items[0];
+            }
+            sw.Close();
         }
 
 
@@ -484,12 +570,28 @@ namespace WindowsFormsApp2_upan
             path.SelectedPath = ini.IniReadValue("目录", "硬盘");
             path.ShowDialog();
             this.textBox2.Text = path.SelectedPath;
+
+            StreamWriter sw = new StreamWriter(YingPanpath, true);
+            if (!(comboBox_YingPan.Items.Contains(textBox2.Text)))
+            {
+                sw.WriteLine(textBox2.Text);
+                comboBox_YingPan.Items.Insert(0, textBox2.Text);
+                comboBox_YingPan.Text = (string)comboBox_YingPan.Items[0];
+            }
+            else
+            {
+                comboBox_YingPan.Items.RemoveAt(comboBox_YingPan.FindString(textBox2.Text));
+                comboBox_YingPan.Items.Insert(0, textBox2.Text);
+                comboBox_YingPan.Text = (string)comboBox_YingPan.Items[0];
+            }
+            sw.Close();
         }        
         //清空listbox
         private void button4_Click(object sender, EventArgs e)//点击按钮 清空listbox
         {
             listView1.Items .Clear ();            
         }
+
 
         static int it = 2;
         //填充listbox
@@ -503,31 +605,34 @@ namespace WindowsFormsApp2_upan
             }
             else
             {
-                //this.listView1.BeginUpdate();  //数据更新，UI暂时挂起，直到EndUpdate绘制控件，可以有效避免闪烁并大大提高加载速度 
+                this.listView1.BeginUpdate();  //数据更新，UI暂时挂起，直到EndUpdate绘制控件，可以有效避免闪烁并大大提高加载速度 
                 ListViewItem lvi = new ListViewItem();
                 //lvi.ImageIndex = i;     //通过与imageList绑定，显示imageList中第i项图标 
                 if (it % 2 == 0)
                 {
-                    lvi.BackColor = Color.MediumSeaGreen;
-                    lvi.ForeColor = Color.White;
+                    lvi.BackColor = Color.Moccasin;
+                    lvi.ForeColor = Color.MidnightBlue; //Teal
                 }
-                //else
-                //{
-                //    lvi.BackColor = Color.MediumSeaGreen;
-                //    lvi.ForeColor = Color.Red;
-                //}
+                else
+                {
+                    lvi.BackColor = Color.NavajoWhite;
+                    lvi.ForeColor = Color.MidnightBlue;
+                }
 
                 lvi.Text = mulu;
                 lvi.SubItems.Add(s);
                 this.listView1.Items.Add(lvi);
-                // this.listView1.EndUpdate();  //结束数据处理，UI界面一次性绘制
+                this.listView1.EnsureVisible(this.listView1.Items.Count - 1);
+                this.listView1.EndUpdate();  //结束数据处理，UI界面一次性绘制
                 it++;
             }
 
 
             
 
-        }//填充函数 填充listbox
+        }//可以实现在子线程中填充listbox ，委托函数
+
+
 
         private string panfu()
         {
@@ -557,6 +662,15 @@ namespace WindowsFormsApp2_upan
                     textBox1.Enabled = true;
                     textBox1.Text = s ;
                     timer1.Enabled = false;
+                    if (ini.ExistINIFile())//验证是否存在文件，存在就读取
+                    {
+                        if (ini.IniReadValue("目录", "U盘") != "" && ini.IniReadValue("目录", "硬盘") != "")
+                        {
+                            textBox1.Text = ini.IniReadValue("目录", "U盘");
+                            textBox2.Text = ini.IniReadValue("目录", "硬盘");
+                        }
+
+                    }
                 }
             }
         }        
@@ -613,5 +727,10 @@ namespace WindowsFormsApp2_upan
         {
             return File.Exists(inipath);
         }
+    }
+
+    public  class UpanStream
+    {
+
     }
 }                           

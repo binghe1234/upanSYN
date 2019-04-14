@@ -42,6 +42,8 @@
             this.timer1 = new System.Windows.Forms.Timer(this.components);
             this.textBox2 = new System.Windows.Forms.TextBox();
             this.button4 = new System.Windows.Forms.Button();
+            this.comboBox_UPan = new System.Windows.Forms.ComboBox();
+            this.comboBox_YingPan = new System.Windows.Forms.ComboBox();
             this.SuspendLayout();
             // 
             // textBox1
@@ -144,11 +146,29 @@
             this.button4.UseVisualStyleBackColor = true;
             this.button4.Click += new System.EventHandler(this.button4_Click);
             // 
+            // comboBox_UPan
+            // 
+            this.comboBox_UPan.FormattingEnabled = true;
+            this.comboBox_UPan.Location = new System.Drawing.Point(13, 329);
+            this.comboBox_UPan.Name = "comboBox_UPan";
+            this.comboBox_UPan.Size = new System.Drawing.Size(175, 20);
+            this.comboBox_UPan.TabIndex = 9;
+            // 
+            // comboBox_YingPan
+            // 
+            this.comboBox_YingPan.FormattingEnabled = true;
+            this.comboBox_YingPan.Location = new System.Drawing.Point(260, 330);
+            this.comboBox_YingPan.Name = "comboBox_YingPan";
+            this.comboBox_YingPan.Size = new System.Drawing.Size(164, 20);
+            this.comboBox_YingPan.TabIndex = 10;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 12F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(629, 379);
+            this.Controls.Add(this.comboBox_YingPan);
+            this.Controls.Add(this.comboBox_UPan);
             this.Controls.Add(this.textBox2);
             this.Controls.Add(this.listView1);
             this.Controls.Add(this.button4);
@@ -185,6 +205,8 @@
         private System.Windows.Forms.Timer timer1;
         private System.Windows.Forms.TextBox textBox2;
         private System.Windows.Forms.Button button4;
+        private System.Windows.Forms.ComboBox comboBox_UPan;
+        private System.Windows.Forms.ComboBox comboBox_YingPan;
     }
 }
 
